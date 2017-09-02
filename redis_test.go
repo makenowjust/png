@@ -22,7 +22,22 @@ func TestRedisPinger(t *testing.T) {
 		p := &RedisPinger{Addr: s.Addr()}
 		err = p.Ping(context.Background())
 		if err != nil {
-			t.Fatal("failed to ping: %+#v", err)
+			t.Fatalf("failed to ping: %+#v", err)
+		}
+	})
+
+	t.Run("Password", func(t *testing.T) {
+		s, err := miniredis.Run()
+		if err != nil {
+			panic(err)
+		}
+		defer s.Close()
+		s.RequireAuth("password")
+
+		p := &RedisPinger{Addr: s.Addr(), Password: "password"}
+		err = p.Ping(context.Background())
+		if err != nil {
+			t.Fatalf("failed to ping: %+#v", err)
 		}
 	})
 
