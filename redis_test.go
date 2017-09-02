@@ -48,7 +48,7 @@ func TestRedisPinger(t *testing.T) {
 	})
 
 	t.Run("Timeout", func(t *testing.T) {
-		addr, err := net.ResolveTCPAddr("tcp", "localhost:55555")
+		addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
 		if err != nil {
 			panic(err)
 		}
@@ -58,7 +58,7 @@ func TestRedisPinger(t *testing.T) {
 		}
 		defer s.Close()
 
-		p := &RedisPinger{Addr: addr.String()}
+		p := &RedisPinger{Addr: s.Addr().String()}
 		ctx, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		err = p.Ping(ctx)
 
@@ -72,7 +72,7 @@ func TestRedisPinger(t *testing.T) {
 	})
 
 	t.Run("Pong", func(t *testing.T) {
-		addr, err := net.ResolveTCPAddr("tcp", "localhost:55555")
+		addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
 		if err != nil {
 			panic(err)
 		}
@@ -90,7 +90,7 @@ func TestRedisPinger(t *testing.T) {
 		}()
 		defer s.Close()
 
-		p := &RedisPinger{Addr: addr.String()}
+		p := &RedisPinger{Addr: s.Addr().String()}
 		err = p.Ping(context.Background())
 
 		if err == nil {
