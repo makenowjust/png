@@ -13,11 +13,11 @@ type RedisPinger struct {
 	DB       int
 }
 
-func (pinger *RedisPinger) Ping(ctx context.Context) error {
+func (p *RedisPinger) Ping(ctx context.Context) error {
 	client := redis.NewClient(&redis.Options{
-		Addr:     pinger.Addr,
-		Password: pinger.Password,
-		DB:       pinger.DB,
+		Addr:     p.Addr,
+		Password: p.Password,
+		DB:       p.DB,
 	})
 	defer client.Close()
 

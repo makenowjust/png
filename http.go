@@ -11,8 +11,8 @@ type HTTPPinger struct {
 	URL string
 }
 
-func (pinger *HTTPPinger) Ping(ctx context.Context) error {
-	req, err := http.NewRequest("HEAD", pinger.URL, nil)
+func (p *HTTPPinger) Ping(ctx context.Context) error {
+	req, err := http.NewRequest("HEAD", p.URL, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create HTTP request")
 	}
