@@ -18,6 +18,14 @@ func NewPinger(target string) (Pinger, error) {
 	}
 
 	switch u.Scheme {
+	case "http":
+		fallthrough
+	case "https":
+		return &HTTPPinger{URL: target}, nil
+
+	case "":
+		return &HTTPPinger{URL: "http://" + target}, nil
+
 	default:
 		return nil, errors.Errorf("unsupported schema: %s", u.Scheme)
 	}
