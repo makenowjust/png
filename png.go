@@ -54,10 +54,11 @@ func NewPinger(target string) (Pinger, error) {
 		return &HTTPPinger{URL: "http://" + target}, nil
 
 	default:
+		// For "localhost:8080" case
 		if u.Opaque != "" && "0" <= u.Opaque[0:1] && u.Opaque[0:1] <= "9" {
 			return &HTTPPinger{URL: "http://" + target}, nil
 		}
 
-		return nil, errors.Errorf("unsupported schema: %s", u.Scheme)
+		return nil, errors.Errorf("unsupported scheme: %s", u.Scheme)
 	}
 }
