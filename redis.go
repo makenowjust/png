@@ -21,14 +21,26 @@ func (pinger *RedisPinger) Ping(ctx context.Context) error {
 	})
 	defer client.Close()
 
-	result, err := client.Ping().Result()
-	if err != nil {
-		return errors.Wrap(err, "failed to ping to redis")
-	}
+	done := make(chan error)
+	go func() {
+		result, err := client.Ping().Result()
+		if err != nil {
+			done <- errors.Wrap(err, "failed to ping to redis")
+			return
+		}
 
-	if result != "PONG" {
-		return errors.Errorf("invalid redis response: %#v", result)
-	}
+		if result != "PONG" {
+			done <- errors.Errorf("invalid redis response: %#v", result)
+			return
+		}
 
-	return nil
+		done <- nil
+	}()
+
+	select {
+	case <-ctx.Done():
+		return errors.Wrap(ctx.Err(), "failed to ping to redis")
+	case err := <-done:
+		return err
+	}
 }
