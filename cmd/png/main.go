@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/MakeNowJust/png"
+	"github.com/ttacon/chalk"
 )
 
 func main() {
@@ -32,7 +33,7 @@ func main() {
 		pingers[i] = pinger
 	}
 
-	header := fmt.Sprintf("%%%ds -> ", maxTargetLen)
+	header := fmt.Sprintf("%s%%%ds%s %s->%s ", chalk.White.NewStyle().WithBackground(chalk.ResetColor).WithTextStyle(chalk.Bold), maxTargetLen, chalk.Reset, chalk.Black, chalk.Reset)
 
 	for i := uint(0); *count == 0 || i < *count; i++ {
 		if i != 0 {
@@ -51,13 +52,13 @@ func main() {
 
 			select {
 			case <-ctx.Done():
-				fmt.Println("timeout")
+				fmt.Println(chalk.Yellow.Color("timeout"))
 			case err := <-done:
 				if err != nil {
-					fmt.Println("error")
+					fmt.Println(chalk.Red.Color("error"))
 					fmt.Printf("  %v\n", err.Error())
 				} else {
-					fmt.Println("ok")
+					fmt.Println(chalk.Green.Color("ok"))
 				}
 			}
 		}
