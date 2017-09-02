@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"time"
 )
 
@@ -133,6 +134,15 @@ func TestHTTPPinger(t *testing.T) {
 		<-ctx.Done()
 
 		if msg := err.Error(); msg != "failed HTTP request: Head "+s.URL+": context canceled" {
+			t.Fatalf("unexpected error message: %#v", msg)
+		}
+	})
+
+	t.Run("Invalid URL", func(t *testing.T) {
+		p := &HTTPPinger{URL: "::"}
+		err := p.Ping(context.Background())
+
+		if msg := err.Error(); !strings.HasPrefix(msg, "failed to create HTTP request: ") {
 			t.Fatalf("unexpected error message: %#v", msg)
 		}
 	})
