@@ -25,7 +25,7 @@ func (pinger *HTTPPinger) Ping(ctx context.Context) error {
 		return errors.Wrap(err, "failed HTTP request")
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	if resp.StatusCode >= 400 {
 		return errors.Errorf("failed HTTP request with %s", resp.Status)
 	}
 
