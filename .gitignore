@@ -1,1 +1,6 @@
+# Binaries
 /png
+/png.exe
+
+# Go coverage output
+*.out
