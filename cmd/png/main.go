@@ -79,5 +79,13 @@ func main() {
 		}
 	}
 
+	runner.hookStatsBefore = func() {
+		fmt.Println()
+	}
+
+	runner.hookStats = func(target string, n, succeed int, min, max, avg time.Duration) {
+		fmt.Printf("%s: succeed/count = %2d/%2d, min/max/avg = %12s/%12s/%12s\n", targetColor(targetFmt, target), succeed, n, min, max, avg)
+	}
+
 	runner.Run()
 }
