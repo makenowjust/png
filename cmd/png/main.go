@@ -13,11 +13,11 @@ import (
 
 var (
 	targetColor = color.New(color.FgHiWhite).SprintfFunc()
-	arrowColor  = color.New(color.FgBlack).SprintFunc()
+	arrowColor  = color.New(color.FgBlack).SprintfFunc()
 
-	okColor      = color.New(color.FgGreen).SprintFunc()
-	timeoutColor = color.New(color.FgYellow).SprintFunc()
-	errorColor   = color.New(color.FgHiRed).SprintFunc()
+	okColor      = color.New(color.FgGreen).SprintfFunc()
+	timeoutColor = color.New(color.FgYellow).SprintfFunc()
+	errorColor   = color.New(color.FgHiRed).SprintfFunc()
 
 	elapsedColor = color.New(color.FgHiBlack).SprintFunc()
 )
@@ -27,9 +27,20 @@ func main() {
 	timeout := flag.DurationP("timeout", "t", 10*time.Second, "specify timeout")
 	interval := flag.DurationP("interval", "i", 1*time.Second, "specify interval of ping iteration")
 	noColor := flag.BoolP("no-color", "C", false, "disable color output")
-	flag.Parse()
+	stats := flag.StringP("stats", "s", "", "decide to show statistics (default all; all/only/none)")
 
+	flag.Parse()
 	color.NoColor = *noColor
+
+	if *stats == "" {
+		*stats = "all"
+	}
+
+	if *stats != "all" && *stats != "only" && *stats != "none" {
+		fmt.Fprintf(os.Stderr, "unknown stats mode: %s\n", *stats)
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	if flag.NArg() == 0 {
 		flag.Usage()
@@ -58,6 +69,7 @@ func main() {
 		count:    *count,
 		timeout:  *timeout,
 		interval: *interval,
+		stats:    *stats,
 		targets:  targets,
 		pingers:  pingers,
 	}
@@ -83,8 +95,20 @@ func main() {
 		fmt.Println()
 	}
 
-	runner.hookStats = func(target string, n, succeed int, min, max, avg time.Duration) {
-		fmt.Printf("%s: succeed/count = %2d/%2d, min/max/avg = %12s/%12s/%12s\n", targetColor(targetFmt, target), succeed, n, min, max, avg)
+	runner.hookStats = func(target string, ok, timeout, error, total int, min, max, avg time.Duration) {
+		color := okColor
+		if ok != total {
+			if timeout > error {
+				color = timeoutColor
+			} else {
+				color = errorColor
+			}
+		}
+
+		fmt.Printf("%s: %s, min/max/avg = %12s/%12s/%12s\n",
+			targetColor(targetFmt, target),
+			color("ok/timeout/error/total = %2d/%2d/%2d/%2d", ok, timeout, error, total),
+			min, max, avg)
 	}
 
 	runner.Run()

@@ -11,18 +11,19 @@ type runner struct {
 	count    int
 	timeout  time.Duration
 	interval time.Duration
+	stats    string
 
 	hookPingBefore  func(target string)
 	hookPingAfter   func(target, status string, elapsed time.Duration, err error)
 	hookStatsBefore func()
-	hookStats       func(target string, n, succeed int, min, max, avg time.Duration)
+	hookStats       func(target string, ok, timeout, error, total int, min, max, avg time.Duration)
 
 	targets []string
 	pingers []png.Pinger
 }
 
 func (r *runner) Run() {
-	results := make([][]bool, len(r.targets))
+	results := make([][]string, len(r.targets))
 	durations := make([][]time.Duration, len(r.targets))
 
 	for i := 0; r.count == 0 || i < r.count; i++ {
@@ -31,7 +32,9 @@ func (r *runner) Run() {
 		}
 
 		for i, p := range r.pingers {
-			r.hookPingBefore(r.targets[i])
+			if r.stats != "only" {
+				r.hookPingBefore(r.targets[i])
+			}
 
 			elapsed, err := png.PingWithTimeout(p, r.timeout)
 			var status string
@@ -46,29 +49,40 @@ func (r *runner) Run() {
 				}
 			}
 
-			r.hookPingAfter(r.targets[i], status, elapsed, err)
-			results[i] = append(results[i], status == "ok")
+			if r.stats != "only" {
+				r.hookPingAfter(r.targets[i], status, elapsed, err)
+			}
+			results[i] = append(results[i], status)
 			durations[i] = append(durations[i], elapsed)
 		}
 	}
 
-	r.hookStatsBefore()
+	if r.stats == "all" {
+		r.hookStatsBefore()
+	}
 
 	for i, target := range r.targets {
-		n := len(results[i])
-		if n == 0 {
+		total := len(results[i])
+		if total == 0 {
 			continue
 		}
 
-		succeed := 0
+		ok := 0
+		timeout := 0
+		error := 0
 
 		min := time.Duration(math.MaxInt64)
 		max := time.Duration(0)
 		avg := time.Duration(0)
 
 		for j, result := range results[i] {
-			if result {
-				succeed += 1
+			switch result {
+			case "ok":
+				ok += 1
+			case "timeout":
+				timeout += 1
+			case "error":
+				error += 1
 			}
 
 			elapsed := durations[i][j]
@@ -81,9 +95,11 @@ func (r *runner) Run() {
 				max = elapsed
 			}
 
-			avg += elapsed / time.Duration(n)
+			avg += elapsed / time.Duration(total)
 		}
 
-		r.hookStats(target, n, succeed, min, max, avg)
+		if r.stats != "none" {
+			r.hookStats(target, ok, timeout, error, total, min, max, avg)
+		}
 	}
 }
