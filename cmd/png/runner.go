@@ -16,7 +16,7 @@ type runner struct {
 	hookPingBefore  func(target string)
 	hookPingAfter   func(target, status string, elapsed time.Duration, err error)
 	hookStatsBefore func()
-	hookStats       func(target string, ok, timeout, error, total int, min, max, avg time.Duration)
+	hookStats       func(target string, ok, timeout, error, total int, min, max, average time.Duration)
 
 	targets []string
 	pingers []png.Pinger
@@ -73,7 +73,7 @@ func (r *runner) Run() {
 
 		min := time.Duration(math.MaxInt64)
 		max := time.Duration(0)
-		avg := time.Duration(0)
+		average := time.Duration(0)
 
 		for j, result := range results[i] {
 			switch result {
@@ -95,11 +95,11 @@ func (r *runner) Run() {
 				max = elapsed
 			}
 
-			avg += elapsed / time.Duration(total)
+			average += elapsed / time.Duration(total)
 		}
 
 		if r.stats != "none" {
-			r.hookStats(target, ok, timeout, error, total, min, max, avg)
+			r.hookStats(target, ok, timeout, error, total, min, max, average)
 		}
 	}
 }
