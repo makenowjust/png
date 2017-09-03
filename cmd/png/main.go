@@ -1,13 +1,14 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/MakeNowJust/png"
 	"github.com/fatih/color"
+	flag "github.com/spf13/pflag"
 )
 
 var (
@@ -22,10 +23,18 @@ var (
 )
 
 func main() {
-	count := flag.Uint("c", 0, "count")
-	timeout := flag.Duration("t", 10*time.Second, "timeout")
-	interval := flag.Duration("i", 1*time.Second, "interval")
+	count := flag.IntP("count", "c", 0, "repeat count times (default: 0; means infinite repeat)")
+	timeout := flag.DurationP("timeout", "t", 10*time.Second, "specify timeout")
+	interval := flag.DurationP("interval", "i", 1*time.Second, "specify interval of ping iteration")
+	noColor := flag.BoolP("no-color", "C", false, "disable color output")
 	flag.Parse()
+
+	color.NoColor = *noColor
+
+	if flag.NArg() == 0 {
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	targets := flag.Args()
 	maxTargetLen := 0
@@ -45,7 +54,7 @@ func main() {
 
 	targetFmt := fmt.Sprintf("%%%ds", maxTargetLen)
 
-	for i := uint(0); *count == 0 || i < *count; i++ {
+	for i := 0; *count == 0 || i < *count; i++ {
 		if i != 0 {
 			time.Sleep(*interval)
 		}
