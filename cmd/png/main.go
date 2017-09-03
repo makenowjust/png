@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -12,12 +11,14 @@ import (
 )
 
 var (
-	targetColor = color.New(color.FgWhite).Add(color.Bold).SprintfFunc()
+	targetColor = color.New(color.FgHiWhite).SprintfFunc()
 	arrowColor  = color.New(color.FgBlack).SprintFunc()
 
 	okColor      = color.New(color.FgGreen).SprintFunc()
 	timeoutColor = color.New(color.FgYellow).SprintFunc()
-	errorColor   = color.New(color.FgRed).Add(color.Bold).SprintFunc()
+	errorColor   = color.New(color.FgHiRed).SprintFunc()
+
+	elapsedColor = color.New(color.FgHiBlack).SprintFunc()
 )
 
 func main() {
@@ -46,28 +47,21 @@ func main() {
 
 	for i := uint(0); *count == 0 || i < *count; i++ {
 		if i != 0 {
-			<-time.After(*interval)
+			time.Sleep(*interval)
 		}
 
-		for i, pinger := range pingers {
+		for i, p := range pingers {
 			fmt.Printf("%s %s ", targetColor(targetFmt, targets[i]), arrowColor("->"))
 
-			ctx, _ := context.WithTimeout(context.Background(), *timeout)
-
-			done := make(chan error)
-			go func() {
-				done <- pinger.Ping(ctx)
-			}()
-
-			select {
-			case <-ctx.Done():
-				fmt.Println(timeoutColor("timeout"))
-			case err := <-done:
-				if err != nil {
-					fmt.Println(errorColor("error"))
-					fmt.Printf("  %v\n", err.Error())
-				} else {
-					fmt.Println(okColor("ok"))
+			elapsed, err := png.PingWithTimeout(p, *timeout)
+			if err == nil {
+				fmt.Printf("%s %s\n", okColor("ok     "), elapsedColor(elapsed))
+			} else {
+				switch err.(type) {
+				case *png.Timeout:
+					fmt.Printf("%s %s\n", timeoutColor("timeout"), elapsedColor(elapsed))
+				default:
+					fmt.Printf("%s %s\n  %v\n", errorColor("error  "), elapsedColor(elapsed), err)
 				}
 			}
 		}

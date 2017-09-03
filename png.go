@@ -4,13 +4,44 @@ import (
 	"context"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 )
 
+type Timeout struct {
+	Err error
+}
+
+func (timeout *Timeout) Error() string {
+	return timeout.Err.Error()
+}
+
 type Pinger interface {
 	Addr() (hostname string, port int, err error)
 	Ping(ctx context.Context) error
+}
+
+func PingWithTimeout(p Pinger, timeout time.Duration) (elapsed time.Duration, err error) {
+	start := time.Now()
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	done := make(chan error)
+	go func() {
+		done <- p.Ping(ctx)
+	}()
+
+	select {
+	case <-ctx.Done():
+		err = &Timeout{Err: ctx.Err()}
+		elapsed = timeout
+	case err = <-done:
+		elapsed = time.Since(start)
+	}
+
+	return
 }
 
 type urlPinger struct {
