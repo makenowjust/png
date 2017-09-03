@@ -19,7 +19,11 @@ func Parse(rawurl string) (Pinger, error) {
 
 	// When hostname is not specified, sets `127.0.0.1`.
 	if u.Hostname() == "" {
-		u.Host = "127.0.0.1:" + u.Port()
+		host := "127.0.0.1"
+		if port := u.Port(); port != "" {
+			host += ":" + port
+		}
+		u.Host = host
 	}
 
 	switch u.Scheme {
@@ -27,6 +31,12 @@ func Parse(rawurl string) (Pinger, error) {
 		fallthrough
 	case "https":
 		return &HTTPPinger{urlPinger: &urlPinger{url: u}}, nil
+
+	case "mysql":
+    if port := u.Port(); port == "" {
+      u.Host = u.Hostname() + ":3306"
+    }
+		return &MySQLPinger{urlPinger: &urlPinger{url: u}}, nil
 
 	case "redis":
 		return parseRedis(u)

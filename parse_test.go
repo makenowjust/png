@@ -131,6 +131,42 @@ func TestParseForHTTP(t *testing.T) {
 	})
 }
 
+func TestParseForMySQL(t *testing.T) {
+	t.Run("All", func(t *testing.T) {
+		p, err := Parse("mysql://root@localhost:3306/")
+
+		if err != nil {
+			t.Fatalf("failed in Parse(): %+#v", err)
+		}
+
+		mp, ok := p.(*MySQLPinger)
+		if !ok {
+			t.Fatalf("failed in casting to *MySQLPinger: %+#v", p)
+		}
+
+		if mp.url.String() != "mysql://root@localhost:3306/" {
+			t.Fatalf("unexpected result: %#v", mp.url.String())
+		}
+	})
+
+	t.Run("No Host", func(t *testing.T) {
+		p, err := Parse("mysql://root@/")
+
+		if err != nil {
+			t.Fatalf("failed in Parse(): %+#v", err)
+		}
+
+		mp, ok := p.(*MySQLPinger)
+		if !ok {
+			t.Fatalf("failed in casting to *MySQLPinger: %+#v", p)
+		}
+
+		if mp.url.String() != "mysql://root@127.0.0.1:3306/" {
+			t.Fatalf("unexpected result: %#v", mp.url.String())
+		}
+	})
+}
+
 func TestParseForRedis(t *testing.T) {
 	t.Run("No Port", func(t *testing.T) {
 		p, err := Parse("redis://localhost")
