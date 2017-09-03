@@ -26,7 +26,7 @@ func Parse(rawurl string) (Pinger, error) {
 	case "http":
 		fallthrough
 	case "https":
-		return &HTTPPinger{url: u}, nil
+		return &HTTPPinger{urlPinger: &urlPinger{url: u}}, nil
 
 	case "redis":
 		return parseRedis(u)

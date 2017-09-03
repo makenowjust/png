@@ -13,6 +13,10 @@ import (
 	"time"
 )
 
+func newHTTPPinger(u *url.URL) *HTTPPinger {
+	return &HTTPPinger{urlPinger: &urlPinger{url: u}}
+}
+
 func TestHTTPPingerAddr(t *testing.T) {
 	t.Run("Port", func(t *testing.T) {
 		t.Run("Valid", func(t *testing.T) {
@@ -21,7 +25,7 @@ func TestHTTPPingerAddr(t *testing.T) {
 				panic(err)
 			}
 
-			p := &HTTPPinger{url: u}
+			p := newHTTPPinger(u)
 			hostname, port, err := p.Addr()
 
 			if err != nil {
@@ -43,7 +47,7 @@ func TestHTTPPingerAddr(t *testing.T) {
 				panic(err)
 			}
 
-			p := &HTTPPinger{url: u}
+			p := newHTTPPinger(u)
 			hostname, port, err := p.Addr()
 
 			if err == nil {
@@ -63,7 +67,7 @@ func TestHTTPPingerAddr(t *testing.T) {
 				panic(err)
 			}
 
-			p := &HTTPPinger{url: u}
+			p := newHTTPPinger(u)
 			hostname, port, err := p.Addr()
 
 			if err != nil {
@@ -85,7 +89,7 @@ func TestHTTPPingerAddr(t *testing.T) {
 				panic(err)
 			}
 
-			p := &HTTPPinger{url: u}
+			p := newHTTPPinger(u)
 			hostname, port, err := p.Addr()
 
 			if err != nil {
@@ -107,7 +111,7 @@ func TestHTTPPingerAddr(t *testing.T) {
 				panic(err)
 			}
 
-			p := &HTTPPinger{url: u}
+			p := newHTTPPinger(u)
 			hostname, port, err := p.Addr()
 
 			if err == nil {
@@ -170,7 +174,7 @@ func TestHTTPPingerPing(t *testing.T) {
 				})
 				defer s.Close()
 
-				p := &HTTPPinger{url: u}
+				p := newHTTPPinger(u)
 				err := p.Ping(context.Background())
 				if err != nil {
 					t.Fatalf("failed in p.Ping(): %+#v", err)
@@ -226,7 +230,7 @@ func TestHTTPPingerPing(t *testing.T) {
 				})
 				defer s.Close()
 
-				p := &HTTPPinger{url: u}
+				p := newHTTPPinger(u)
 				err := p.Ping(context.Background())
 				if err == nil {
 					t.Fatal("succeed in p.Ping()")
@@ -246,7 +250,7 @@ func TestHTTPPingerPing(t *testing.T) {
 		})
 		defer s.Close()
 
-		p := &HTTPPinger{url: u}
+		p := newHTTPPinger(u)
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		err := p.Ping(ctx)
@@ -262,7 +266,7 @@ func TestHTTPPingerPing(t *testing.T) {
 	})
 
 	t.Run("Invalid URL", func(t *testing.T) {
-		p := &HTTPPinger{url: &url.URL{Opaque: "::"}}
+		p := newHTTPPinger(&url.URL{Opaque: "::"})
 		err := p.Ping(context.Background())
 
 		if err == nil {
