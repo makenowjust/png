@@ -3,6 +3,7 @@ package png
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
@@ -20,11 +21,20 @@ func (p *RedisPinger) Addr() (string, int, error) {
 }
 
 func (p *RedisPinger) Ping(ctx context.Context) error {
-	client := redis.NewClient(&redis.Options{
+	opts := &redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", p.hostname, p.port),
 		Password: p.password,
 		DB:       p.db,
-	})
+	}
+
+	if deadline, ok := ctx.Deadline(); ok {
+		d := time.Until(deadline)
+		opts.DialTimeout = d
+		opts.ReadTimeout = d
+		opts.WriteTimeout = d
+	}
+
+	client := redis.NewClient(opts)
 	defer client.Close()
 
 	done := make(chan error)
