@@ -19,7 +19,7 @@ func (p *MySQLPinger) Ping(ctx context.Context) error {
 		return errors.Wrap(err, "failed in opening MySQL connection")
 	}
 
-	return db.PingContext(ctx)
+	return errors.Wrap(db.PingContext(ctx), "failed in MySQL ping")
 }
 
 func (p *MySQLPinger) urlToDSN() string {

@@ -19,5 +19,5 @@ func (p *PostgresPinger) Ping(ctx context.Context) error {
 		return errors.Wrap(err, "failed in opening Postgres connection")
 	}
 
-	return db.PingContext(ctx)
+	return errors.Wrap(db.PingContext(ctx), "failed in Postgres ping")
 }
