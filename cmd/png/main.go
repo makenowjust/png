@@ -54,25 +54,30 @@ func main() {
 
 	targetFmt := fmt.Sprintf("%%%ds", maxTargetLen)
 
-	for i := 0; *count == 0 || i < *count; i++ {
-		if i != 0 {
-			time.Sleep(*interval)
-		}
+	runner := &runner{
+		count:    *count,
+		timeout:  *timeout,
+		interval: *interval,
+		targets:  targets,
+		pingers:  pingers,
+	}
 
-		for i, p := range pingers {
-			fmt.Printf("%s %s ", targetColor(targetFmt, targets[i]), arrowColor("->"))
+	runner.hookPingBefore = func(target string) {
+		fmt.Printf("%s %s ", targetColor(targetFmt, target), arrowColor("->"))
+	}
 
-			elapsed, err := png.PingWithTimeout(p, *timeout)
-			if err == nil {
-				fmt.Printf("%s %s\n", okColor("ok     "), elapsedColor(elapsed))
-			} else {
-				switch err.(type) {
-				case *png.Timeout:
-					fmt.Printf("%s %s\n", timeoutColor("timeout"), elapsedColor(elapsed))
-				default:
-					fmt.Printf("%s %s\n  %v\n", errorColor("error  "), elapsedColor(elapsed), err)
-				}
-			}
+	runner.hookPingAfter = func(target, status string, elapsed time.Duration, err error) {
+		padStatus := fmt.Sprintf("%-7s", status)
+
+		switch status {
+		case "ok":
+			fmt.Printf("%s %s\n", okColor(padStatus), elapsedColor(elapsed))
+		case "timeout":
+			fmt.Printf("%s %s\n", timeoutColor(padStatus), elapsedColor(elapsed))
+		case "error":
+			fmt.Printf("%s %s\n  %v\n", errorColor(padStatus), elapsedColor(elapsed), err)
 		}
 	}
+
+	runner.Run()
 }
