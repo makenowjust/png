@@ -8,7 +8,16 @@ import (
 	"time"
 
 	"github.com/MakeNowJust/png"
-	"github.com/ttacon/chalk"
+	"github.com/fatih/color"
+)
+
+var (
+	targetColor = color.New(color.FgWhite).Add(color.Bold).SprintfFunc()
+	arrowColor  = color.New(color.FgBlack).SprintFunc()
+
+	okColor      = color.New(color.FgGreen).SprintFunc()
+	timeoutColor = color.New(color.FgYellow).SprintFunc()
+	errorColor   = color.New(color.FgRed).Add(color.Bold).SprintFunc()
 )
 
 func main() {
@@ -33,7 +42,7 @@ func main() {
 		pingers[i] = pinger
 	}
 
-	header := fmt.Sprintf("%s%%%ds%s %s->%s ", chalk.White.NewStyle().WithBackground(chalk.ResetColor).WithTextStyle(chalk.Bold), maxTargetLen, chalk.Reset, chalk.Black, chalk.Reset)
+	targetFmt := fmt.Sprintf("%%%ds", maxTargetLen)
 
 	for i := uint(0); *count == 0 || i < *count; i++ {
 		if i != 0 {
@@ -41,7 +50,7 @@ func main() {
 		}
 
 		for i, pinger := range pingers {
-			fmt.Printf(header, targets[i])
+			fmt.Printf("%s %s ", targetColor(targetFmt, targets[i]), arrowColor("->"))
 
 			ctx, _ := context.WithTimeout(context.Background(), *timeout)
 
@@ -52,13 +61,13 @@ func main() {
 
 			select {
 			case <-ctx.Done():
-				fmt.Println(chalk.Yellow.Color("timeout"))
+				fmt.Println(timeoutColor("timeout"))
 			case err := <-done:
 				if err != nil {
-					fmt.Println(chalk.Red.Color("error"))
+					fmt.Println(errorColor("error"))
 					fmt.Printf("  %v\n", err.Error())
 				} else {
-					fmt.Println(chalk.Green.Color("ok"))
+					fmt.Println(okColor("ok"))
 				}
 			}
 		}
