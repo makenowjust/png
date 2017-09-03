@@ -2,22 +2,28 @@ package png
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
 )
 
 type RedisPinger struct {
-	Addr     string
-	Password string
-	DB       int
+	hostname string
+	port     int
+	password string
+	db       int
+}
+
+func (p *RedisPinger) Addr() (string, int, error) {
+	return p.hostname, p.port, nil
 }
 
 func (p *RedisPinger) Ping(ctx context.Context) error {
 	client := redis.NewClient(&redis.Options{
-		Addr:     p.Addr,
-		Password: p.Password,
-		DB:       p.DB,
+		Addr:     fmt.Sprintf("%s:%d", p.hostname, p.port),
+		Password: p.password,
+		DB:       p.db,
 	})
 	defer client.Close()
 
@@ -25,7 +31,7 @@ func (p *RedisPinger) Ping(ctx context.Context) error {
 	go func() {
 		result, err := client.Ping().Result()
 		if err != nil {
-			done <- errors.Wrap(err, "failed to ping to redis")
+			done <- errors.Wrap(err, "failed in PING command")
 			return
 		}
 
@@ -39,7 +45,7 @@ func (p *RedisPinger) Ping(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
-		return errors.Wrap(ctx.Err(), "failed to ping to redis")
+		return errors.Wrap(ctx.Err(), "failed in PING command")
 	case err := <-done:
 		return err
 	}

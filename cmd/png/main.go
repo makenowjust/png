@@ -25,7 +25,7 @@ func main() {
 			maxTargetLen = len(target)
 		}
 
-		pinger, err := png.NewPinger(target)
+		pinger, err := png.Parse(target)
 		if err != nil {
 			log.Fatal(err)
 		}
