@@ -29,6 +29,8 @@ func (p *urlPinger) Addr() (hostname string, port int, err error) {
 			port = 80
 		case "https":
 			port = 443
+		case "postgres":
+			port = 5432
 		default:
 			err = errors.Errorf("invalid scheme: %s", p.url.Scheme)
 		}

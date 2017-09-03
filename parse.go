@@ -33,10 +33,19 @@ func Parse(rawurl string) (Pinger, error) {
 		return &HTTPPinger{urlPinger: &urlPinger{url: u}}, nil
 
 	case "mysql":
-    if port := u.Port(); port == "" {
-      u.Host = u.Hostname() + ":3306"
-    }
+		if port := u.Port(); port == "" {
+			u.Host = u.Hostname() + ":3306"
+		}
 		return &MySQLPinger{urlPinger: &urlPinger{url: u}}, nil
+
+	case "postgres":
+		if u.RawQuery == "" {
+			u.RawQuery = "sslmode=disable"
+		}
+		if u.Path == "/" {
+			u.Path = "/postgres"
+		}
+		return &PostgresPinger{urlPinger: &urlPinger{url: u}}, nil
 
 	case "redis":
 		return parseRedis(u)
