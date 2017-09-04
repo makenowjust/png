@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -19,7 +20,7 @@ func (p *TCPPinger) Addr() (string, int, error) {
 }
 
 func (p *TCPPinger) Ping(ctx context.Context) error {
-	address := fmt.Sprintf("%s:%d", p.hostname, p.port)
+  address := p.address()
 	dialer := &net.Dialer{}
 	conn, err := dialer.DialContext(ctx, p.network, address)
 	if err != nil {
@@ -28,4 +29,13 @@ func (p *TCPPinger) Ping(ctx context.Context) error {
 	defer conn.Close()
 
 	return nil
+}
+
+func (p *TCPPinger) address() string {
+	// TODO: check IPv6 correctly (how?)
+	if strings.Contains(p.hostname, ":") {
+		return fmt.Sprintf("[%s]:%d", p.hostname, p.port)
+	} else {
+		return fmt.Sprintf("%s:%d", p.hostname, p.port)
+  }
 }
