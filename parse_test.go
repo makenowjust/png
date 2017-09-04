@@ -131,6 +131,88 @@ func TestParseForHTTP(t *testing.T) {
 	})
 }
 
+func TestParseTCP(t *testing.T) {
+	t.Run("TCP", func(t *testing.T) {
+		p, err := Parse("tcp://8.8.8.8:53")
+
+		if err != nil {
+			t.Fatalf("failed in Parse(): %+#v", err)
+		}
+
+		tp, ok := p.(*TCPPinger)
+		if !ok {
+			t.Fatalf("failed in casting to *TCPPinger: %+#v", p)
+		}
+
+		if tp.network != "tcp" || tp.hostname != "8.8.8.8" || tp.port != 53 {
+			t.Fatalf("unexpected result: %+#v", tp)
+		}
+	})
+
+	t.Run("Well-known Port", func(t *testing.T) {
+		p, err := Parse("tcp://8.8.8.8:gopher") // ʕ◔ϖ◔ʔ
+
+		if err != nil {
+			t.Fatalf("failed in Parse(): %+#v", err)
+		}
+
+		tp, ok := p.(*TCPPinger)
+		if !ok {
+			t.Fatalf("failed in casting to *TCPPinger: %+#v", p)
+		}
+
+		if tp.network != "tcp" || tp.hostname != "8.8.8.8" || tp.port != 70 {
+			t.Fatalf("unexpected result: %+#v", tp)
+		}
+	})
+
+	t.Run("Unknown Port", func(t *testing.T) {
+		p, err := Parse("tcp://8.8.8.8:kotlin") // Minami Kotori is so cute!
+
+		if err == nil {
+			t.Fatalf("succeed in Parse(): %+#v", p)
+		}
+
+		if msg := err.Error(); !strings.HasPrefix(msg, "invalid port name: kotlin: ") {
+			t.Fatalf("unexpected error message: %#v", msg)
+		}
+	})
+
+	t.Run("TCP4", func(t *testing.T) {
+		p, err := Parse("tcp4://8.8.8.8:53")
+
+		if err != nil {
+			t.Fatalf("failed in Parse(): %+#v", err)
+		}
+
+		tp, ok := p.(*TCPPinger)
+		if !ok {
+			t.Fatalf("failed in casting to *TCPPinger: %+#v", p)
+		}
+
+		if tp.network != "tcp4" || tp.hostname != "8.8.8.8" || tp.port != 53 {
+			t.Fatalf("unexpected result: %+#v", tp)
+		}
+	})
+
+	t.Run("TCP6", func(t *testing.T) {
+		p, err := Parse("tcp6://[2001:4860:4860::8888]:53")
+
+		if err != nil {
+			t.Fatalf("failed in Parse(): %+#v", err)
+		}
+
+		tp, ok := p.(*TCPPinger)
+		if !ok {
+			t.Fatalf("failed in casting to *TCPPinger: %+#v", p)
+		}
+
+		if tp.network != "tcp6" || tp.hostname != "2001:4860:4860::8888" || tp.port != 53 {
+			t.Fatalf("unexpected result: %+#v", tp)
+		}
+	})
+}
+
 func TestParseForMySQL(t *testing.T) {
 	t.Run("All", func(t *testing.T) {
 		p, err := Parse("mysql://root@localhost:13306/")
@@ -175,13 +257,13 @@ func TestParseForPostgres(t *testing.T) {
 			t.Fatalf("failed in Parse(): %+#v", err)
 		}
 
-		mp, ok := p.(*PostgresPinger)
+		pp, ok := p.(*PostgresPinger)
 		if !ok {
-			t.Fatalf("failed in casting to *MySQLPinger: %+#v", p)
+			t.Fatalf("failed in casting to *PostgresPinger: %+#v", p)
 		}
 
-		if mp.url.String() != "postgres://root@localhost:15043/pg?sslmode=require" {
-			t.Fatalf("unexpected result: %#v", mp.url.String())
+		if pp.url.String() != "postgres://root@localhost:15043/pg?sslmode=require" {
+			t.Fatalf("unexpected result: %#v", pp.url.String())
 		}
 	})
 
@@ -192,13 +274,13 @@ func TestParseForPostgres(t *testing.T) {
 			t.Fatalf("failed in Parse(): %+#v", err)
 		}
 
-		mp, ok := p.(*PostgresPinger)
+		pp, ok := p.(*PostgresPinger)
 		if !ok {
-			t.Fatalf("failed in casting to *MySQLPinger: %+#v", p)
+			t.Fatalf("failed in casting to *PostgresPinger: %+#v", p)
 		}
 
-		if mp.url.String() != "postgres://root@localhost:15043/pg?sslmode=disable" {
-			t.Fatalf("unexpected result: %#v", mp.url.String())
+		if pp.url.String() != "postgres://root@localhost:15043/pg?sslmode=disable" {
+			t.Fatalf("unexpected result: %#v", pp.url.String())
 		}
 	})
 
@@ -209,13 +291,13 @@ func TestParseForPostgres(t *testing.T) {
 			t.Fatalf("failed in Parse(): %+#v", err)
 		}
 
-		mp, ok := p.(*PostgresPinger)
+		pp, ok := p.(*PostgresPinger)
 		if !ok {
-			t.Fatalf("failed in casting to *MySQLPinger: %+#v", p)
+			t.Fatalf("failed in casting to *PostgresPinger: %+#v", p)
 		}
 
-		if mp.url.String() != "postgres://root@localhost:15043/postgres?sslmode=disable" {
-			t.Fatalf("unexpected result: %#v", mp.url.String())
+		if pp.url.String() != "postgres://root@localhost:15043/postgres?sslmode=disable" {
+			t.Fatalf("unexpected result: %#v", pp.url.String())
 		}
 	})
 }
