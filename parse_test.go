@@ -221,7 +221,7 @@ func TestParseForRedis(t *testing.T) {
 			t.Fatal("succeed in Parse()", p)
 		}
 
-		if msg := err.Error(); !strings.HasPrefix(msg, "invalid port number: invalid: ") {
+		if msg := err.Error(); !strings.HasPrefix(msg, "invalid port name: invalid: ") {
 			t.Fatalf("unexpected error message: %#v", msg)
 		}
 	})

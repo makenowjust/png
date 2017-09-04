@@ -1,8 +1,11 @@
 package png
 
 import (
+	"context"
+	"net"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -30,12 +33,21 @@ func Parse(rawurl string) (Pinger, error) {
 	case "http":
 		fallthrough
 	case "https":
+		updatePort("tcp", u)
 		return &HTTPPinger{urlPinger: &urlPinger{url: u}}, nil
+
+	case "tcp":
+		fallthrough
+	case "tcp4":
+		fallthrough
+	case "tcp6":
+		return parseTCP(u)
 
 	case "mysql":
 		if port := u.Port(); port == "" {
 			u.Host = u.Hostname() + ":3306"
 		}
+		updatePort("tcp", u)
 		return &MySQLPinger{urlPinger: &urlPinger{url: u}}, nil
 
 	case "postgres":
@@ -45,6 +57,7 @@ func Parse(rawurl string) (Pinger, error) {
 		if u.Path == "/" {
 			u.Path = "/postgres"
 		}
+		updatePort("tcp", u)
 		return &PostgresPinger{urlPinger: &urlPinger{url: u}}, nil
 
 	case "redis":
@@ -73,6 +86,35 @@ func parseURL(rawurl string) (u *url.URL, err error) {
 	return
 }
 
+func parsePort(network, portString string) (int, error) {
+	// TODO: invisible context is here!
+	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	return net.DefaultResolver.LookupPort(ctx, network, portString)
+}
+
+func updatePort(network string, u *url.URL) {
+	if portString := u.Port(); portString != "" {
+		if port, err := parsePort(network, portString); err == nil {
+			u.Host = u.Hostname() + ":" + strconv.Itoa(port)
+		}
+	}
+}
+
+func parseTCP(u *url.URL) (Pinger, error) {
+	network := u.Scheme
+	hostname := u.Hostname()
+
+	portString := u.Port()
+	if portString == "" {
+	}
+	port, err := parsePort(network, portString)
+	if err != nil {
+		return nil, errors.Wrapf(err, "invalid port name: %s", portString)
+	}
+
+	return &TCPPinger{network: network, hostname: hostname, port: port}, nil
+}
+
 func parseRedis(u *url.URL) (Pinger, error) {
 	var password string
 	port := 6379 // Redis well-known port
@@ -85,9 +127,9 @@ func parseRedis(u *url.URL) (Pinger, error) {
 
 	if portString := u.Port(); portString != "" {
 		var err error
-		port, err = strconv.Atoi(portString)
+		port, err = parsePort("tcp", portString)
 		if err != nil {
-			return nil, errors.Wrapf(err, "invalid port number: %s", portString)
+			return nil, errors.Wrapf(err, "invalid port name: %s", portString)
 		}
 	}
 
