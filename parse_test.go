@@ -133,7 +133,7 @@ func TestParseForHTTP(t *testing.T) {
 
 func TestParseForMySQL(t *testing.T) {
 	t.Run("All", func(t *testing.T) {
-		p, err := Parse("mysql://root@localhost:3306/")
+		p, err := Parse("mysql://root@localhost:13306/")
 
 		if err != nil {
 			t.Fatalf("failed in Parse(): %+#v", err)
@@ -144,7 +144,7 @@ func TestParseForMySQL(t *testing.T) {
 			t.Fatalf("failed in casting to *MySQLPinger: %+#v", p)
 		}
 
-		if mp.url.String() != "mysql://root@localhost:3306/" {
+		if mp.url.String() != "mysql://root@localhost:13306/" {
 			t.Fatalf("unexpected result: %#v", mp.url.String())
 		}
 	})
@@ -162,6 +162,59 @@ func TestParseForMySQL(t *testing.T) {
 		}
 
 		if mp.url.String() != "mysql://root@127.0.0.1:3306/" {
+			t.Fatalf("unexpected result: %#v", mp.url.String())
+		}
+	})
+}
+
+func TestParseForPostgres(t *testing.T) {
+	t.Run("All", func(t *testing.T) {
+		p, err := Parse("postgres://root@localhost:15043/pg?sslmode=require")
+
+		if err != nil {
+			t.Fatalf("failed in Parse(): %+#v", err)
+		}
+
+		mp, ok := p.(*PostgresPinger)
+		if !ok {
+			t.Fatalf("failed in casting to *MySQLPinger: %+#v", p)
+		}
+
+		if mp.url.String() != "postgres://root@localhost:15043/pg?sslmode=require" {
+			t.Fatalf("unexpected result: %#v", mp.url.String())
+		}
+	})
+
+	t.Run("No SSLMode", func(t *testing.T) {
+		p, err := Parse("postgres://root@localhost:15043/pg")
+
+		if err != nil {
+			t.Fatalf("failed in Parse(): %+#v", err)
+		}
+
+		mp, ok := p.(*PostgresPinger)
+		if !ok {
+			t.Fatalf("failed in casting to *MySQLPinger: %+#v", p)
+		}
+
+		if mp.url.String() != "postgres://root@localhost:15043/pg?sslmode=disable" {
+			t.Fatalf("unexpected result: %#v", mp.url.String())
+		}
+	})
+
+	t.Run("No Table", func(t *testing.T) {
+		p, err := Parse("postgres://root@localhost:15043/")
+
+		if err != nil {
+			t.Fatalf("failed in Parse(): %+#v", err)
+		}
+
+		mp, ok := p.(*PostgresPinger)
+		if !ok {
+			t.Fatalf("failed in casting to *MySQLPinger: %+#v", p)
+		}
+
+		if mp.url.String() != "postgres://root@localhost:15043/postgres?sslmode=disable" {
 			t.Fatalf("unexpected result: %#v", mp.url.String())
 		}
 	})
