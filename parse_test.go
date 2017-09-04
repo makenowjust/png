@@ -14,7 +14,7 @@ func TestParse(t *testing.T) {
 			t.Fatalf("succeed in Parse(): %+#v", p)
 		}
 
-		if msg := err.Error(); msg != "cannot create pinger from empty string" {
+		if msg := err.Error(); msg != "invalid URL: \"\" (empty)" {
 			t.Fatalf("unexpected error message: %#v", msg)
 		}
 	})
@@ -174,6 +174,18 @@ func TestParseTCP(t *testing.T) {
 		}
 
 		if msg := err.Error(); !strings.HasPrefix(msg, "invalid port name: kotlin: ") {
+			t.Fatalf("unexpected error message: %#v", msg)
+		}
+	})
+
+	t.Run("Empty Port", func(t *testing.T) {
+		p, err := Parse("tcp://8.8.8.8")
+
+		if err == nil {
+			t.Fatalf("succeed in Parse(): %+#v", p)
+		}
+
+		if msg := err.Error(); msg != "invalid port name: \"\" (empty)" {
 			t.Fatalf("unexpected error message: %#v", msg)
 		}
 	})

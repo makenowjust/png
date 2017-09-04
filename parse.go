@@ -12,7 +12,7 @@ import (
 
 func Parse(rawurl string) (Pinger, error) {
 	if rawurl == "" {
-		return nil, errors.New("cannot create pinger from empty string")
+		return nil, errors.New("invalid URL: \"\" (empty)")
 	}
 
 	u, err := parseURL(rawurl)
@@ -106,7 +106,9 @@ func parseTCP(u *url.URL) (Pinger, error) {
 
 	portString := u.Port()
 	if portString == "" {
+		return nil, errors.New("invalid port name: \"\" (empty)")
 	}
+
 	port, err := parsePort(network, portString)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid port name: %s", portString)
