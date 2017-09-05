@@ -24,6 +24,7 @@ func (p *HTTPPinger) Ping(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed in HTTP request")
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
 		return errors.Errorf("failed in HTTP request by %s", resp.Status)
