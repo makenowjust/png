@@ -35,6 +35,11 @@ func Parse(rawurl string) (Pinger, error) {
 	case "https":
 		updatePort("tcp", u)
 		return &HTTPPinger{urlPinger: &urlPinger{url: u}}, nil
+	case "ws":
+		fallthrough
+	case "wss":
+		updatePort("tcp", u)
+		return &WebSocketPinger{urlPinger: &urlPinger{url: u}}, nil
 
 	case "tcp":
 		fallthrough

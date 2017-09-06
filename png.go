@@ -35,6 +35,7 @@ func PingWithTimeout(p Pinger, timeout time.Duration) (elapsed time.Duration, er
 
 	select {
 	case <-ctx.Done():
+		elapsed = time.Since(start)
 		err = &Timeout{Err: ctx.Err()}
 	case err = <-done:
 		elapsed = time.Since(start)
@@ -56,8 +57,12 @@ func (p *urlPinger) Addr() (hostname string, port int, err error) {
 	} else {
 		switch p.url.Scheme {
 		case "http":
+			fallthrough
+		case "ws":
 			port = 80
 		case "https":
+			fallthrough
+		case "wss":
 			port = 443
 		case "postgres":
 			port = 5432
