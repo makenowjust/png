@@ -63,6 +63,10 @@ func Parse(rawurl string) (Pinger, error) {
 	case "redis":
 		return parseRedis(u)
 
+	case "amqp":
+		updatePort("tcp", u)
+		return &AMQPPinger{urlPinger: &urlPinger{url: u}}, nil
+
 	default:
 		return nil, errors.Errorf("invalid scheme: %s", u.Scheme)
 	}

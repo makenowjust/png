@@ -36,7 +36,6 @@ func PingWithTimeout(p Pinger, timeout time.Duration) (elapsed time.Duration, er
 	select {
 	case <-ctx.Done():
 		err = &Timeout{Err: ctx.Err()}
-		elapsed = timeout
 	case err = <-done:
 		elapsed = time.Since(start)
 	}
@@ -62,6 +61,8 @@ func (p *urlPinger) Addr() (hostname string, port int, err error) {
 			port = 443
 		case "postgres":
 			port = 5432
+		case "amqp":
+			port = 5672
 		default:
 			err = errors.Errorf("invalid scheme: %s", p.url.Scheme)
 		}
