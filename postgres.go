@@ -15,10 +15,9 @@ type PostgresPinger struct {
 }
 
 func (p *PostgresPinger) Ping(ctx context.Context) error {
-	db, err := sql.Open("postgres", p.url.String())
-	if err != nil {
-		return errors.Wrap(err, "failed in opening Postgres connection")
-	}
+	db, _ := sql.Open("postgres", p.url.String())
+	// sql.Open() must be succeeded when driver name is correct.
+	defer db.Close()
 
 	return errors.Wrap(db.PingContext(ctx), "failed in Postgres ping")
 }

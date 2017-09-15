@@ -15,10 +15,9 @@ type MySQLPinger struct {
 }
 
 func (p *MySQLPinger) Ping(ctx context.Context) error {
-	db, err := sql.Open("mysql", p.urlToDSN())
-	if err != nil {
-		return errors.Wrap(err, "failed in opening MySQL connection")
-	}
+	db, _ := sql.Open("mysql", p.urlToDSN())
+	// sql.Open() must be succeeded when driver name is correct.
+	defer db.Close()
 
 	return errors.Wrap(db.PingContext(ctx), "failed in MySQL ping")
 }
