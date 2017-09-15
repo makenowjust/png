@@ -47,7 +47,7 @@ func (p *AMQPPinger) Ping(ctx context.Context) error {
 
 		q, err := ch.QueueDeclare(
 			"",    // name
-			false, //durable
+			false, // durable
 			true,  // autoDelete
 			true,  // exclusive
 			false, // noWait
@@ -73,7 +73,7 @@ func (p *AMQPPinger) Ping(ctx context.Context) error {
 		}
 
 		wait, err := ch.Consume(
-			q.Name, // ququq
+			q.Name, // queue
 			"",     // consumer
 			true,   // autoAck
 			true,   // exclusive
