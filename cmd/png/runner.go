@@ -1,11 +1,42 @@
 package main
 
 import (
+	"context"
 	"math"
 	"time"
 
 	"github.com/MakeNowJust/png"
 )
+
+type timeoutError struct {
+	Err error
+}
+
+func (t *timeoutError) Error() string {
+	return t.Err.Error()
+}
+
+func pingWithTimeout(p png.Pinger, timeout time.Duration) (elapsed time.Duration, err error) {
+	start := time.Now()
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	done := make(chan error)
+	go func() {
+		done <- p.Ping(ctx)
+	}()
+
+	select {
+	case <-ctx.Done():
+		elapsed = time.Since(start)
+		err = &timeoutError{Err: ctx.Err()}
+	case err = <-done:
+		elapsed = time.Since(start)
+	}
+
+	return
+}
 
 type runner struct {
 	count    int
@@ -36,12 +67,12 @@ func (r *runner) Run() {
 				r.hookPingBefore(r.targets[i])
 			}
 
-			elapsed, err := png.PingWithTimeout(p, r.timeout)
+			elapsed, err := pingWithTimeout(p, r.timeout)
 			var status string
 			if err == nil {
 				status = "ok"
 			} else {
-				if to, ok := err.(*png.Timeout); ok {
+				if to, ok := err.(*timeoutError); ok {
 					status = "timeout"
 					err = to.Err
 				} else {
