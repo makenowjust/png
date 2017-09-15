@@ -8,8 +8,8 @@ import (
 )
 
 type TCPPinger struct {
-	network  string
-	addr     string
+	network string
+	addr    string
 }
 
 func (p *TCPPinger) Ping(ctx context.Context) error {

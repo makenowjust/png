@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 )
+
 func runHTTPServer(handler func(http.ResponseWriter, *http.Request)) (*httptest.Server, *url.URL) {
 	s := httptest.NewServer(http.HandlerFunc(handler))
 
