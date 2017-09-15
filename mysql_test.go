@@ -12,7 +12,7 @@ func TestMySQLURLToDSN(t *testing.T) {
 		panic(err)
 	}
 
-	p := &MySQLPinger{urlPinger: &urlPinger{url: u}}
+	p := &MySQLPinger{url: u}
 
 	if dsn := p.urlToDSN(); dsn != "tcp(localhost)" {
 		t.Fatalf("unexpected dsn: %#v", dsn)

@@ -3,14 +3,15 @@ package png
 import (
 	"context"
 	"net"
-  "net/http"
+	"net/http"
+	"net/url"
 
-	"github.com/pkg/errors"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 )
 
 type WebSocketPinger struct {
-	*urlPinger
+	url *url.URL
 }
 
 func (ws *WebSocketPinger) Ping(ctx context.Context) error {
@@ -33,18 +34,18 @@ func (ws *WebSocketPinger) Ping(ctx context.Context) error {
 			},
 		}
 
-    header := http.Header{}
-    header.Add("User-Agent", "png/0.0.0-dev")
-    conn, _, err := dialer.Dial(ws.url.String(), header)
-    if err != nil {
-      done <- errors.Wrap(err, "failed in opening WebSocket connection")
+		header := http.Header{}
+		header.Add("User-Agent", "png/0.0.0-dev")
+		conn, _, err := dialer.Dial(ws.url.String(), header)
+		if err != nil {
+			done <- errors.Wrap(err, "failed in opening WebSocket connection")
 			return
 		}
 		defer conn.Close()
 
-    // TODO: should does it check resp fileds?
+		// TODO: should does it check resp fileds?
 
-    done <- nil
+		done <- nil
 	}()
 
 	select {

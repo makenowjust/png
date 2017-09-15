@@ -3,13 +3,14 @@ package png
 import (
 	"context"
 	"net"
+	"net/url"
 
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
 
 type AMQPPinger struct {
-	*urlPinger
+	url *url.URL
 }
 
 func (p *AMQPPinger) Ping(ctx context.Context) error {

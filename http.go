@@ -3,12 +3,13 @@ package png
 import (
 	"context"
 	"net/http"
+	"net/url"
 
 	"github.com/pkg/errors"
 )
 
 type HTTPPinger struct {
-	*urlPinger
+	url *url.URL
 }
 
 func (p *HTTPPinger) Ping(ctx context.Context) error {

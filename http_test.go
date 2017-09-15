@@ -12,119 +12,6 @@ import (
 	"strings"
 	"time"
 )
-
-func newHTTPPinger(u *url.URL) *HTTPPinger {
-	return &HTTPPinger{urlPinger: &urlPinger{url: u}}
-}
-
-func TestHTTPPingerAddr(t *testing.T) {
-	t.Run("Port", func(t *testing.T) {
-		t.Run("Valid", func(t *testing.T) {
-			u, err := url.Parse("http://localhost:8080")
-			if err != nil {
-				panic(err)
-			}
-
-			p := newHTTPPinger(u)
-			hostname, port, err := p.Addr()
-
-			if err != nil {
-				t.Fatalf("failed in p.Addr(): %+#v", err)
-			}
-
-			if hostname != "localhost" {
-				t.Fatalf("unexpected hostname: %#v", port)
-			}
-
-			if port != 8080 {
-				t.Fatalf("unexpected port: %v", port)
-			}
-		})
-
-		t.Run("Invalid", func(t *testing.T) {
-			u, err := url.Parse("http://localhost:invalid")
-			if err != nil {
-				panic(err)
-			}
-
-			p := newHTTPPinger(u)
-			hostname, port, err := p.Addr()
-
-			if err == nil {
-				t.Fatal("succeed in p.Addr()", hostname, port)
-			}
-
-			if msg := err.Error(); !strings.HasPrefix(msg, "failed in parsing port number: ") {
-				t.Fatalf("unexpected error message: %#v", msg)
-			}
-		})
-	})
-
-	t.Run("Wellknown", func(t *testing.T) {
-		t.Run("HTTP", func(t *testing.T) {
-			u, err := url.Parse("http://localhost")
-			if err != nil {
-				panic(err)
-			}
-
-			p := newHTTPPinger(u)
-			hostname, port, err := p.Addr()
-
-			if err != nil {
-				t.Fatalf("failed in p.Addr(): %+#v", err)
-			}
-
-			if hostname != "localhost" {
-				t.Fatalf("unexpected hostname: %#v", port)
-			}
-
-			if port != 80 {
-				t.Fatalf("unexpected port: %v", port)
-			}
-		})
-
-		t.Run("HTTPS", func(t *testing.T) {
-			u, err := url.Parse("https://localhost")
-			if err != nil {
-				panic(err)
-			}
-
-			p := newHTTPPinger(u)
-			hostname, port, err := p.Addr()
-
-			if err != nil {
-				t.Fatalf("failed in p.Addr(): %+#v", err)
-			}
-
-			if hostname != "localhost" {
-				t.Fatalf("unexpected hostname: %#v", port)
-			}
-
-			if port != 443 {
-				t.Fatalf("unexpected port: %v", port)
-			}
-		})
-
-		t.Run("Invalid", func(t *testing.T) {
-			u, err := url.Parse("invalid://localhost")
-			if err != nil {
-				panic(err)
-			}
-
-			p := newHTTPPinger(u)
-			hostname, port, err := p.Addr()
-
-			if err == nil {
-				t.Fatal("succeed in p.Addr()", hostname, port)
-			}
-
-			if msg := err.Error(); msg != "invalid scheme: invalid" {
-				t.Fatalf("unexpected error message: %#v", msg)
-			}
-		})
-	})
-}
-
 func runHTTPServer(handler func(http.ResponseWriter, *http.Request)) (*httptest.Server, *url.URL) {
 	s := httptest.NewServer(http.HandlerFunc(handler))
 
@@ -174,7 +61,7 @@ func TestHTTPPingerPing(t *testing.T) {
 				})
 				defer s.Close()
 
-				p := newHTTPPinger(u)
+				p := &HTTPPinger{url: u}
 				err := p.Ping(context.Background())
 				if err != nil {
 					t.Fatalf("failed in p.Ping(): %+#v", err)
@@ -230,7 +117,7 @@ func TestHTTPPingerPing(t *testing.T) {
 				})
 				defer s.Close()
 
-				p := newHTTPPinger(u)
+				p := &HTTPPinger{url: u}
 				err := p.Ping(context.Background())
 				if err == nil {
 					t.Fatal("succeed in p.Ping()")
@@ -250,7 +137,7 @@ func TestHTTPPingerPing(t *testing.T) {
 		})
 		defer s.Close()
 
-		p := newHTTPPinger(u)
+		p := &HTTPPinger{url: u}
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		err := p.Ping(ctx)
@@ -266,7 +153,7 @@ func TestHTTPPingerPing(t *testing.T) {
 	})
 
 	t.Run("Invalid URL", func(t *testing.T) {
-		p := newHTTPPinger(&url.URL{Opaque: "::"})
+		p := &HTTPPinger{url: &url.URL{Opaque: "::"}}
 		err := p.Ping(context.Background())
 
 		if err == nil {

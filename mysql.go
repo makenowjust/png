@@ -3,6 +3,7 @@ package png
 import (
 	"context"
 	"database/sql"
+	"net/url"
 
 	"github.com/pkg/errors"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type MySQLPinger struct {
-	*urlPinger
+	url *url.URL
 }
 
 func (p *MySQLPinger) Ping(ctx context.Context) error {

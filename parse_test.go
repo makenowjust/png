@@ -31,20 +31,20 @@ func TestParse(t *testing.T) {
 		}
 	})
 
-	t.Run("Invalid Schme", func(t *testing.T) {
+	t.Run("Unknown Schme", func(t *testing.T) {
 		p, err := Parse("invalid://")
 
 		if err == nil {
 			t.Fatalf("succeed in Parse(): %+#v", p)
 		}
 
-		if msg := err.Error(); msg != "invalid scheme: invalid" {
+		if msg := err.Error(); msg != "unknown scheme: invalid" {
 			t.Fatalf("unexpected error message: %#v", msg)
 		}
 	})
 }
 
-func TestParseForHTTP(t *testing.T) {
+func TestParseHTTPURL(t *testing.T) {
 	t.Run("No Scheme", func(t *testing.T) {
 		p, err := Parse("localhost")
 
@@ -131,7 +131,43 @@ func TestParseForHTTP(t *testing.T) {
 	})
 }
 
-func TestParseTCP(t *testing.T) {
+func TestParseWebSocketURL(t *testing.T) {
+	t.Run("WS", func(t *testing.T) {
+		p, err := Parse("ws://localhost:8080")
+
+		if err != nil {
+			t.Fatalf("failed in Parse(): %+#v", err)
+		}
+
+		wp, ok := p.(*WebSocketPinger)
+		if !ok {
+			t.Fatalf("failed in casting to *WebSocketPinger: %+#v", p)
+		}
+
+		if wp.url.String() != "ws://localhost:8080" {
+			t.Fatalf("unexpected result: %#v", wp.url.String())
+		}
+	})
+
+	t.Run("WSS", func(t *testing.T) {
+		p, err := Parse("wss://localhost:8080")
+
+		if err != nil {
+			t.Fatalf("failed in Parse(): %+#v", err)
+		}
+
+		wp, ok := p.(*WebSocketPinger)
+		if !ok {
+			t.Fatalf("failed in casting to *WebSocketPinger: %+#v", p)
+		}
+
+		if wp.url.String() != "wss://localhost:8080" {
+			t.Fatalf("unexpected result: %#v", wp.url.String())
+		}
+	})
+}
+
+func TestParseTCPURL(t *testing.T) {
 	t.Run("TCP", func(t *testing.T) {
 		p, err := Parse("tcp://8.8.8.8:53")
 
@@ -144,49 +180,8 @@ func TestParseTCP(t *testing.T) {
 			t.Fatalf("failed in casting to *TCPPinger: %+#v", p)
 		}
 
-		if tp.network != "tcp" || tp.hostname != "8.8.8.8" || tp.port != 53 {
+		if tp.network != "tcp" || tp.addr != "8.8.8.8:53" {
 			t.Fatalf("unexpected result: %+#v", tp)
-		}
-	})
-
-	t.Run("Well-known Port", func(t *testing.T) {
-		p, err := Parse("tcp://8.8.8.8:gopher") // ʕ◔ϖ◔ʔ
-
-		if err != nil {
-			t.Fatalf("failed in Parse(): %+#v", err)
-		}
-
-		tp, ok := p.(*TCPPinger)
-		if !ok {
-			t.Fatalf("failed in casting to *TCPPinger: %+#v", p)
-		}
-
-		if tp.network != "tcp" || tp.hostname != "8.8.8.8" || tp.port != 70 {
-			t.Fatalf("unexpected result: %+#v", tp)
-		}
-	})
-
-	t.Run("Unknown Port", func(t *testing.T) {
-		p, err := Parse("tcp://8.8.8.8:kotlin") // Minami Kotori is so cute!
-
-		if err == nil {
-			t.Fatalf("succeed in Parse(): %+#v", p)
-		}
-
-		if msg := err.Error(); !strings.HasPrefix(msg, "invalid port name: kotlin: ") {
-			t.Fatalf("unexpected error message: %#v", msg)
-		}
-	})
-
-	t.Run("Empty Port", func(t *testing.T) {
-		p, err := Parse("tcp://8.8.8.8")
-
-		if err == nil {
-			t.Fatalf("succeed in Parse(): %+#v", p)
-		}
-
-		if msg := err.Error(); msg != "invalid port name: \"\" (empty)" {
-			t.Fatalf("unexpected error message: %#v", msg)
 		}
 	})
 
@@ -202,7 +197,7 @@ func TestParseTCP(t *testing.T) {
 			t.Fatalf("failed in casting to *TCPPinger: %+#v", p)
 		}
 
-		if tp.network != "tcp4" || tp.hostname != "8.8.8.8" || tp.port != 53 {
+		if tp.network != "tcp4" || tp.addr != "8.8.8.8:53" {
 			t.Fatalf("unexpected result: %+#v", tp)
 		}
 	})
@@ -219,13 +214,13 @@ func TestParseTCP(t *testing.T) {
 			t.Fatalf("failed in casting to *TCPPinger: %+#v", p)
 		}
 
-		if tp.network != "tcp6" || tp.hostname != "2001:4860:4860::8888" || tp.port != 53 {
+		if tp.network != "tcp6" || tp.addr != "[2001:4860:4860::8888]:53" {
 			t.Fatalf("unexpected result: %+#v", tp)
 		}
 	})
 }
 
-func TestParseForMySQL(t *testing.T) {
+func TestParseMySQLURL(t *testing.T) {
 	t.Run("All", func(t *testing.T) {
 		p, err := Parse("mysql://root@localhost:13306/")
 
@@ -261,7 +256,7 @@ func TestParseForMySQL(t *testing.T) {
 	})
 }
 
-func TestParseForPostgres(t *testing.T) {
+func TestParsePostgresURL(t *testing.T) {
 	t.Run("All", func(t *testing.T) {
 		p, err := Parse("postgres://root@localhost:15043/pg?sslmode=require")
 
@@ -314,24 +309,7 @@ func TestParseForPostgres(t *testing.T) {
 	})
 }
 
-func TestParseForRedis(t *testing.T) {
-	t.Run("No Port", func(t *testing.T) {
-		p, err := Parse("redis://localhost")
-
-		if err != nil {
-			t.Fatalf("failed in Parse(): %+#v", err)
-		}
-
-		rp, ok := p.(*RedisPinger)
-		if !ok {
-			t.Fatalf("failed in casting to *RedisPinger: %+#v", p)
-		}
-
-		if rp.port != 6379 {
-			t.Fatalf("unexpected port number: %v", rp.port)
-		}
-	})
-
+func TestParseRedisURL(t *testing.T) {
 	t.Run("All", func(t *testing.T) {
 		p, err := Parse("redis://:password@localhost:16379/42")
 
@@ -344,12 +322,8 @@ func TestParseForRedis(t *testing.T) {
 			t.Fatalf("failed in casting to *RedisPinger: %+#v", p)
 		}
 
-		if rp.hostname != "localhost" {
-			t.Fatalf("unexpected hostname: %#v", rp.hostname)
-		}
-
-		if rp.port != 16379 {
-			t.Fatalf("unexpected port number: %v", rp.port)
+		if rp.addr != "localhost:16379" {
+			t.Fatalf("unexpected addr: %#v", rp.addr)
 		}
 
 		if rp.password != "password" {
@@ -358,18 +332,6 @@ func TestParseForRedis(t *testing.T) {
 
 		if rp.db != 42 {
 			t.Fatalf("unexpected db number: %v", rp.db)
-		}
-	})
-
-	t.Run("Invalid Port", func(t *testing.T) {
-		p, err := Parse("redis://localhost:invalid")
-
-		if err == nil {
-			t.Fatal("succeed in Parse()", p)
-		}
-
-		if msg := err.Error(); !strings.HasPrefix(msg, "invalid port name: invalid: ") {
-			t.Fatalf("unexpected error message: %#v", msg)
 		}
 	})
 
@@ -384,4 +346,21 @@ func TestParseForRedis(t *testing.T) {
 			t.Fatalf("unexpected error message: %#v", msg)
 		}
 	})
+}
+
+func TestParseAMQPURL(t *testing.T) {
+	p, err := Parse("amqp://localhost:5672")
+
+	if err != nil {
+		t.Fatalf("failed in Parse(): %+#v", err)
+	}
+
+	ap, ok := p.(*AMQPPinger)
+	if !ok {
+		t.Fatalf("failed in casting to *WebSocketPinger: %+#v", p)
+	}
+
+	if ap.url.String() != "amqp://localhost:5672" {
+		t.Fatalf("unexpected result: %#v", ap.url.String())
+	}
 }

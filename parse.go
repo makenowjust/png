@@ -1,11 +1,8 @@
 package png
 
 import (
-	"context"
-	"net"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/pkg/errors"
 )
@@ -33,27 +30,24 @@ func Parse(rawurl string) (Pinger, error) {
 	case "http":
 		fallthrough
 	case "https":
-		updatePort("tcp", u)
-		return &HTTPPinger{urlPinger: &urlPinger{url: u}}, nil
+		return &HTTPPinger{url: u}, nil
 	case "ws":
 		fallthrough
 	case "wss":
-		updatePort("tcp", u)
-		return &WebSocketPinger{urlPinger: &urlPinger{url: u}}, nil
+		return &WebSocketPinger{url: u}, nil
 
 	case "tcp":
 		fallthrough
 	case "tcp4":
 		fallthrough
 	case "tcp6":
-		return parseTCP(u)
+		return &TCPPinger{network: u.Scheme, addr: u.Host}, nil
 
 	case "mysql":
 		if port := u.Port(); port == "" {
 			u.Host = u.Hostname() + ":3306"
 		}
-		updatePort("tcp", u)
-		return &MySQLPinger{urlPinger: &urlPinger{url: u}}, nil
+		return &MySQLPinger{url: u}, nil
 
 	case "postgres":
 		if u.RawQuery == "" {
@@ -62,18 +56,16 @@ func Parse(rawurl string) (Pinger, error) {
 		if u.Path == "/" {
 			u.Path = "/postgres"
 		}
-		updatePort("tcp", u)
-		return &PostgresPinger{urlPinger: &urlPinger{url: u}}, nil
+		return &PostgresPinger{url: u}, nil
 
 	case "redis":
 		return parseRedis(u)
 
 	case "amqp":
-		updatePort("tcp", u)
-		return &AMQPPinger{urlPinger: &urlPinger{url: u}}, nil
+		return &AMQPPinger{url: u}, nil
 
 	default:
-		return nil, errors.Errorf("invalid scheme: %s", u.Scheme)
+		return nil, errors.Errorf("unknown scheme: %s", u.Scheme)
 	}
 }
 
@@ -95,53 +87,13 @@ func parseURL(rawurl string) (u *url.URL, err error) {
 	return
 }
 
-func parsePort(network, portString string) (int, error) {
-	// TODO: invisible context is here!
-	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
-	return net.DefaultResolver.LookupPort(ctx, network, portString)
-}
-
-func updatePort(network string, u *url.URL) {
-	if portString := u.Port(); portString != "" {
-		if port, err := parsePort(network, portString); err == nil {
-			u.Host = u.Hostname() + ":" + strconv.Itoa(port)
-		}
-	}
-}
-
-func parseTCP(u *url.URL) (Pinger, error) {
-	network := u.Scheme
-	hostname := u.Hostname()
-
-	portString := u.Port()
-	if portString == "" {
-		return nil, errors.New("invalid port name: \"\" (empty)")
-	}
-
-	port, err := parsePort(network, portString)
-	if err != nil {
-		return nil, errors.Wrapf(err, "invalid port name: %s", portString)
-	}
-
-	return &TCPPinger{network: network, hostname: hostname, port: port}, nil
-}
-
 func parseRedis(u *url.URL) (Pinger, error) {
 	var password string
-	port := 6379 // Redis well-known port
 	var db int
 
 	if user := u.User; user != nil {
 		password, _ = user.Password()
 		// TODO: should we treat username as password? It maybe useful but it maybe break consistent.
-	}
-
-	if portString := u.Port(); portString != "" {
-		var err error
-		port, err = parsePort("tcp", portString)
-		if err != nil {
-			return nil, errors.Wrapf(err, "invalid port name: %s", portString)
-		}
 	}
 
 	if path := u.Path; len(path) >= 2 {
@@ -155,8 +107,7 @@ func parseRedis(u *url.URL) (Pinger, error) {
 	}
 
 	return &RedisPinger{
-		hostname: u.Hostname(),
-		port:     port,
+		addr:     u.Host,
 		password: password,
 		db:       db,
 	}, nil

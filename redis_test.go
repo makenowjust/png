@@ -5,80 +5,26 @@ import (
 
 	"context"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/alicebob/miniredis"
 )
 
-func TestRedisPingerAddr(t *testing.T) {
-	p := &RedisPinger{hostname: "localhost", port: 6379}
-	hostname, port, err := p.Addr()
-
-	if err != nil {
-		t.Fatalf("failed in p.Addr(): %+#v", err)
-	}
-
-	if hostname != "localhost" {
-		t.Fatalf("unexpected hostname: %#v", hostname)
-	}
-
-	if port != 6379 {
-		t.Fatalf("unexpected port: %v", port)
-	}
-}
-
-func runMiniredis() (*miniredis.Miniredis, string, int) {
+func runMiniredis() (*miniredis.Miniredis, string) {
 	s, err := miniredis.Run()
 	if err != nil {
 		panic(err)
 	}
-
-	port, err := strconv.Atoi(s.Port())
-	if err != nil {
-		s.Close()
-		panic(err)
-	}
-
-	return s, s.Host(), port
-}
-
-func runTCPServer(handler func(net.Conn)) (*net.TCPListener, string, int) {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
-	if err != nil {
-		panic(err)
-	}
-
-	s, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		panic(err)
-	}
-
-	go func() {
-		for {
-			conn, err := s.Accept()
-			if err != nil {
-				return
-			}
-			go func() {
-				defer conn.Close()
-				handler(conn)
-			}()
-		}
-	}()
-
-	addr = s.Addr().(*net.TCPAddr)
-
-	return s, addr.IP.String(), addr.Port
+	return s, s.Addr()
 }
 
 func TestRedisPingerPing(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
-		s, hostname, port := runMiniredis()
+		s, addr := runMiniredis()
 		defer s.Close()
 
-		p := &RedisPinger{hostname: hostname, port: port}
+		p := &RedisPinger{addr: addr}
 		err := p.Ping(context.Background())
 		if err != nil {
 			t.Fatalf("failed in p.Ping(): %+#v", err)
@@ -86,12 +32,12 @@ func TestRedisPingerPing(t *testing.T) {
 	})
 
 	t.Run("Password", func(t *testing.T) {
-		s, hostname, port := runMiniredis()
+		s, addr := runMiniredis()
 		defer s.Close()
 
 		s.RequireAuth("password")
 
-		p := &RedisPinger{hostname: hostname, port: port, password: "password"}
+		p := &RedisPinger{addr: addr, password: "password"}
 		err := p.Ping(context.Background())
 		if err != nil {
 			t.Fatalf("failed in p.Ping(): %+#v", err)
@@ -99,10 +45,10 @@ func TestRedisPingerPing(t *testing.T) {
 	})
 
 	t.Run("Cancel", func(t *testing.T) {
-		s, hostname, port := runMiniredis()
+		s, addr := runMiniredis()
 		defer s.Close()
 
-		p := &RedisPinger{hostname: hostname, port: port}
+		p := &RedisPinger{addr: addr}
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		err := p.Ping(ctx)
@@ -117,12 +63,12 @@ func TestRedisPingerPing(t *testing.T) {
 	})
 
 	t.Run("Timeout", func(t *testing.T) {
-		s, hostname, port := runTCPServer(func(conn net.Conn) {
+		s, addr := runTCPServer("tcp", "localhost:0", func(conn net.Conn) {
 			time.Sleep(200 * time.Millisecond)
 		})
 		defer s.Close()
 
-		p := &RedisPinger{hostname: hostname, port: port}
+		p := &RedisPinger{addr: addr}
 		ctx, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		err := p.Ping(ctx)
 
@@ -136,12 +82,12 @@ func TestRedisPingerPing(t *testing.T) {
 	})
 
 	t.Run("Pong", func(t *testing.T) {
-		s, hostname, port := runTCPServer(func(conn net.Conn) {
+		s, addr := runTCPServer("tcp", "localhost:0", func(conn net.Conn) {
 			conn.Write([]byte("+BANG\r\n"))
 		})
 		defer s.Close()
 
-		p := &RedisPinger{hostname: hostname, port: port}
+		p := &RedisPinger{addr: addr}
 		err := p.Ping(context.Background())
 
 		if err == nil {

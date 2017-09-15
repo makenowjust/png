@@ -2,7 +2,6 @@ package png
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -10,19 +9,14 @@ import (
 )
 
 type RedisPinger struct {
-	hostname string
-	port     int
+	addr     string
 	password string
 	db       int
 }
 
-func (p *RedisPinger) Addr() (string, int, error) {
-	return p.hostname, p.port, nil
-}
-
 func (p *RedisPinger) Ping(ctx context.Context) error {
 	opts := &redis.Options{
-		Addr:     fmt.Sprintf("%s:%d", p.hostname, p.port),
+		Addr:     p.addr,
 		Password: p.password,
 		DB:       p.db,
 	}
