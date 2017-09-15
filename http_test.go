@@ -120,7 +120,7 @@ func TestHTTPPingerPing(t *testing.T) {
 				p := &HTTPPinger{url: u}
 				err := p.Ping(context.Background())
 				if err == nil {
-					t.Fatal("succeed in p.Ping()")
+					t.Fatal("succeeded in p.Ping()")
 				}
 
 				if msg := err.Error(); msg != fmt.Sprintf("failed in HTTP request by %d %s", fail, http.StatusText(fail)) {
@@ -144,7 +144,7 @@ func TestHTTPPingerPing(t *testing.T) {
 		<-ctx.Done()
 
 		if err == nil {
-			t.Fatal("succeed in p.Ping")
+			t.Fatal("succeeded in p.Ping")
 		}
 
 		if msg := err.Error(); msg != "failed in HTTP request: Head "+s.URL+": context canceled" {
@@ -157,7 +157,7 @@ func TestHTTPPingerPing(t *testing.T) {
 		err := p.Ping(context.Background())
 
 		if err == nil {
-			t.Fatal("succeed in p.Ping()")
+			t.Fatal("succeeded in p.Ping()")
 		}
 
 		if msg := err.Error(); !strings.HasPrefix(msg, "failed in creating HTTP request: ") {

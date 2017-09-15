@@ -11,7 +11,7 @@ func TestParse(t *testing.T) {
 		p, err := Parse("")
 
 		if err == nil {
-			t.Fatalf("succeed in Parse(): %+#v", p)
+			t.Fatalf("succeeded in Parse(): %+#v", p)
 		}
 
 		if msg := err.Error(); msg != "invalid URL: \"\" (empty)" {
@@ -23,7 +23,7 @@ func TestParse(t *testing.T) {
 		p, err := Parse(":")
 
 		if err == nil {
-			t.Fatalf("succeed in Parse(): %+#v", p)
+			t.Fatalf("succeeded in Parse(): %+#v", p)
 		}
 
 		if msg := err.Error(); !strings.HasPrefix(msg, "failed in parsing URL: \":\"") {
@@ -35,7 +35,7 @@ func TestParse(t *testing.T) {
 		p, err := Parse("invalid://")
 
 		if err == nil {
-			t.Fatalf("succeed in Parse(): %+#v", p)
+			t.Fatalf("succeeded in Parse(): %+#v", p)
 		}
 
 		if msg := err.Error(); msg != "unknown scheme: invalid" {
@@ -339,7 +339,7 @@ func TestParseRedisURL(t *testing.T) {
 		p, err := Parse("redis://localhost/invalid")
 
 		if err == nil {
-			t.Fatal("succeed in Parse()", p)
+			t.Fatal("succeeded in Parse()", p)
 		}
 
 		if msg := err.Error(); !strings.HasPrefix(msg, "invalid db number: \"invalid\": ") {

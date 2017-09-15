@@ -54,7 +54,7 @@ func TestRedisPingerPing(t *testing.T) {
 		err := p.Ping(ctx)
 
 		if err == nil {
-			t.Fatal("succeed to ping")
+			t.Fatal("succeeded to ping")
 		}
 
 		if msg := err.Error(); msg != "failed in PING command: context canceled" {
@@ -73,7 +73,7 @@ func TestRedisPingerPing(t *testing.T) {
 		err := p.Ping(ctx)
 
 		if err == nil {
-			t.Fatal("succeed to ping")
+			t.Fatal("succeeded to ping")
 		}
 
 		if msg := err.Error(); !strings.HasPrefix(msg, "failed in PING command: ") {
@@ -91,7 +91,7 @@ func TestRedisPingerPing(t *testing.T) {
 		err := p.Ping(context.Background())
 
 		if err == nil {
-			t.Fatal("succeed to ping")
+			t.Fatal("succeeded to ping")
 		}
 
 		if msg := err.Error(); msg != "invalid redis response: \"BANG\"" {
