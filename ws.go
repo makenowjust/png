@@ -50,7 +50,7 @@ func (ws *WebSocketPinger) Ping(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
-		return errors.Wrap(ctx.Err(), "failed in sending ping to WebSocket")
+		return errors.Wrap(ctx.Err(), "failed in WebSocket ping")
 	case err := <-done:
 		return err
 	}
